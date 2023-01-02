@@ -1,3 +1,5 @@
+![ScreenShot](/screenshot.png)
+
 ### Purpose
 This script is useful for using historical usage data to compare DTE Electric Rate Plans.
 
