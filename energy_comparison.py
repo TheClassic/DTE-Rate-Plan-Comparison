@@ -63,15 +63,16 @@ class energy_comparison:
 
   def dynamic_price_per_kWH(day, hour, additionalInfo):
   # peak Mon-Fri 3pm to 7pm
-    price = 0.01218 #offpeak
+    price = 0.01184 #offpeak
+    
     if day != energy_comparison.SATURDAY and day != energy_comparison.SUNDAY:
       if hour >= 15 and hour < 19:
-        price = .13025 #peak between 3 and 7
+        price = .12658 #peak between 3 and 7
       elif hour >= 7 and hour < 15 or hour >= 19 and hour < 23:
-        price = .05645 #midpeak
+        price = .05486 #midpeak
 
-    price += .03576 # non-capacity
-    price += .06611 # distribution
+    price += .03403 # non-capacity (note that the rate card indicates a different rate for midpeak, but I believe it to be a typo)
+    price += .06879 # distribution
     
     return price
 
@@ -80,29 +81,29 @@ class energy_comparison:
     price = 0
     if day != energy_comparison.SATURDAY and day != energy_comparison.SUNDAY and hour >= 11 and hour < 19:
       if additionalInfo.month >= 6 and additionalInfo.month <= 10: #June through October
-        price = .11841
+        price = .11033
       else:
-        price = .09341
+        price = .08682
     else: #offpeak
       if additionalInfo.month >= 6 and additionalInfo.month <= 10: #June through October
-        price = .01160
+        price = .00991
       else:
-        price = .00948
+        price = .00792
 
-    price += .04261 # non-capacity
+    price += .04105 # non-capacity
     price +=  .06611 # distribution
 
     return price
 
   def flat_price_per_kWH(day, hour, additionalInfo):
-    price = 0
+    price = .04405
+    noncapacity = .03945
     if additionalInfo.kWHUsedSoFarToday > 17:
-      price = .06484
-    else:
-      price = .045
+      price = .06347
+      noncapacity = .03945
 
-    price += .04176 # non-capacity
-    price +=  .06611 # distribution
+    price += noncapacity
+    price +=  .06879 # distribution
     return price
 
 if __name__ == "__main__":

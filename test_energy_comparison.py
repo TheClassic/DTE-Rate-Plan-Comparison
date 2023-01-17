@@ -5,9 +5,9 @@ import pytest
 import unittest
 assertions = unittest.TestCase('__init__')
 
-offPeak = 0.11405
-midPeak = 0.15832
-peak = 0.23212
+offPeak = 0.01184 + 0.03403 + 0.06879
+midPeak = 0.05486 + 0.03403 + 0.06879
+peak = 0.12658 + 0.03403 + 0.06879
 
 
 def test_dynamic_price():
@@ -37,8 +37,8 @@ def test_dynamic_price():
 
   assert e.dynamic_price_per_kWH(e.SATURDAY, 16, 0) == offPeak, "Offpeak pricing"
 
-flatLower = .15287
-flatHigher = .17271
+flatLower = .04405+.03945+.06879
+flatHigher = .06347+.03945+.06879
 
 def test_flat_price():
 
