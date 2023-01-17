@@ -24,11 +24,11 @@ class energy_comparison:
     fixedPrice = energy_comparison.calc_cost(energy_comparison.get_csv_reader(args.filename), energy_comparison.flat_price_per_kWH)
     timeofDayPrice = energy_comparison.calc_cost(energy_comparison.get_csv_reader(args.filename), energy_comparison.timeofday_price_per_kWH)
 
-    print("Dynamic price: ${}*".format(dynamicPrice))
-    print("Fixed price: ${}".format(fixedPrice))
-    print("Time of Day price: ${}".format(timeofDayPrice))
+    print("Dynamic price:     ${:.0f}*".format(dynamicPrice))
+    print("Fixed price:       ${:.0f}".format(fixedPrice))
+    print("Time of Day price: ${:.0f}".format(timeofDayPrice))
 
-    print("""\nNote, dynamic price plan will have peak days with additional charges not calculated here, that could be as much as $25 a day for multiple days a year. Please dive deeper, consider this, and plan accordingly.""")
+    print("""\n*Note, dynamic price plan will have peak days with additional charges not calculated here, that could be as much as $25 a day for multiple days a year. Please dive deeper, consider this, and plan accordingly.""")
 
   def calc_cost(csvreader, pricingPlan):
     cost = 0.
