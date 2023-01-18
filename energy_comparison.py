@@ -23,10 +23,12 @@ class energy_comparison:
     dynamicPrice = energy_comparison.calc_cost(energy_comparison.get_csv_reader(args.filename), energy_comparison.dynamic_price_per_kWH)
     fixedPrice = energy_comparison.calc_cost(energy_comparison.get_csv_reader(args.filename), energy_comparison.flat_price_per_kWH)
     timeofDayPrice = energy_comparison.calc_cost(energy_comparison.get_csv_reader(args.filename), energy_comparison.timeofday_price_per_kWH)
+    futureDefault = energy_comparison.calc_cost(energy_comparison.get_csv_reader(args.filename), energy_comparison.flat_price_replacement)
 
-    print("Dynamic price:     ${:.0f}*".format(dynamicPrice))
-    print("Fixed price:       ${:.0f}".format(fixedPrice))
-    print("Time of Day price: ${:.0f}".format(timeofDayPrice))
+    print("Dynamic price:          ${:.0f}*".format(dynamicPrice))
+    print("Fixed price (default):  ${:.0f}".format(fixedPrice))
+    print("Time of Day price:      ${:.0f}".format(timeofDayPrice))
+    print("Future default:         ${:.0f}".format(futureDefault))
 
     print("""\n*Note, dynamic price plan will have peak days with additional charges not calculated here, that could be as much as $25 a day for multiple days a year. Please dive deeper, consider this, and plan accordingly.""")
 
@@ -77,7 +79,7 @@ class energy_comparison:
     return price
 
   def timeofday_price_per_kWH(day, hour, additionalInfo):
-  # peak Mon-Fri 3pm to 7pm
+  # peak Mon-Fri 3pm to 7pm (D1.2)
     price = 0
     if day != energy_comparison.SATURDAY and day != energy_comparison.SUNDAY and hour >= 11 and hour < 19:
       if additionalInfo.month >= 6 and additionalInfo.month <= 10: #June through October
@@ -96,6 +98,7 @@ class energy_comparison:
     return price
 
   def flat_price_per_kWH(day, hour, additionalInfo):
+  # D1
     price = .04405
     noncapacity = .03945
     if additionalInfo.kWHUsedSoFarToday > 17:
@@ -104,6 +107,20 @@ class energy_comparison:
 
     price += noncapacity
     price +=  .06879 # distribution
+    return price
+
+  def flat_price_replacement(day, hour, additionalInfo):
+  # https://solutions.dteenergy.com/dte/en/Products/Time-of-Day-3-p-m---7-p-m-/p/TOD-3-7?_ga=2.259465164.775611877.1673536052-1020470228.1671801533&_gl=1*1z6xuy*_ga*MTAyMDQ3MDIyOC4xNjcxODAxNTMz*_ga_J2R5W9DWE4*MTY3MzUzNjA1Mi40LjEuMTY3MzUzNjYwNS4wLjAuMA..
+  # peak Mon-Fri 3pm to 7pm (D1.2)
+    price = 0
+    if day != energy_comparison.SATURDAY and day != energy_comparison.SUNDAY and hour >= 11 and hour < 19:
+      if additionalInfo.month >= 6 and additionalInfo.month <= 9: #June through September
+        price = .2098
+      else:
+        price = .1675
+    else: #offpeak
+        price = .1545
+
     return price
 
 if __name__ == "__main__":
