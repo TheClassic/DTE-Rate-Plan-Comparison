@@ -113,7 +113,7 @@ class energy_comparison:
   # https://solutions.dteenergy.com/dte/en/Products/Time-of-Day-3-p-m---7-p-m-/p/TOD-3-7?_ga=2.259465164.775611877.1673536052-1020470228.1671801533&_gl=1*1z6xuy*_ga*MTAyMDQ3MDIyOC4xNjcxODAxNTMz*_ga_J2R5W9DWE4*MTY3MzUzNjA1Mi40LjEuMTY3MzUzNjYwNS4wLjAuMA..
   # peak Mon-Fri 3pm to 7pm (D1.2)
     price = 0
-    if day != energy_comparison.SATURDAY and day != energy_comparison.SUNDAY and hour >= 11 and hour < 19:
+    if day != energy_comparison.SATURDAY and day != energy_comparison.SUNDAY and hour >= 15 and hour < 19:
       if additionalInfo.month >= 6 and additionalInfo.month <= 9: #June through September
         price = .2098
       else:
