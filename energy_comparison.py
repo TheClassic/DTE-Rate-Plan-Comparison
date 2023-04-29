@@ -3,9 +3,11 @@
 # ref 23639801/PDF/2-23/RES
 # as of Apr 28, 2023
 
-import datetime
 import argparse
+import calendar
 import csv
+import datetime
+import math
 
 class additionalInfo:
   kWHUsedSoFarToday = 0
@@ -17,11 +19,6 @@ class additionalInfo:
   }
 
 class plan_comparison:
-  MONDAY = 0
-  FRIDAY = 4
-  SATURDAY = 5
-  SUNDAY = 6
-
   plans = {
     'timeOfDay3p7p':{
       'name': 'Time of Day 3 p.m. - 7 p.m.',
@@ -72,9 +69,9 @@ class plan_comparison:
     dailyTotal = 0.
     
     for row in csvReader:
-        month = datetime.datetime.strptime(row['Day'], "%m/%d/%Y").month
-        day = datetime.datetime.strptime(row['Day'], "%m/%d/%Y").weekday()
+        date = datetime.datetime.strptime(row['Day'], "%m/%d/%Y")
         hour = datetime.datetime.strptime(row['Hour of Day'], "%I:%M %p").hour
+        dateTime = datetime.datetime(date.year, date.month, date.day, hour)
 
         hourlyTotal = row['Hourly Total']
         if(hourlyTotal == 'No Data'):
@@ -85,8 +82,8 @@ class plan_comparison:
         dailyTotal = plan_comparison.accumulate_daily_total(hour, kwh, dailyTotal)
         additionalInfo.kWHUsedSoFarToday = dailyTotal
         for plan in plan_comparison.plans.keys():
-          plan_comparison.plans[plan]['runningTotal'] += kwh * plan_comparison.calc_price_per_kWH(plan, hour=hour, day=day, month=month)
-        plan_comparison.accumulate_critical_peak(hour, day, kwh)
+          plan_comparison.plans[plan]['runningTotal'] += kwh * plan_comparison.calc_price_per_kWH(plan, dateTime)
+        plan_comparison.accumulate_critical_peak(dateTime, kwh)
 
     for plan in plan_comparison.plans.keys():
       if 'criticalPeakTotal' in plan_comparison.plans[plan]:
@@ -100,22 +97,22 @@ class plan_comparison:
     dailyTotal += hourlyTotal
     return dailyTotal
   
-  def accumulate_critical_peak(hour, day, kwh):
-    if plan_comparison.is_weekday(day) and hour in additionalInfo.criticalPeakHoursUsage.keys():
-      additionalInfo.criticalPeakHoursUsage[hour].append(kwh)
+  def accumulate_critical_peak(dateTime, kwh):
+    if plan_comparison.is_weekday(dateTime) and dateTime.hour in additionalInfo.criticalPeakHoursUsage.keys():
+      additionalInfo.criticalPeakHoursUsage[dateTime.hour].append(kwh)
     return
 
-  def is_weekday(day):
-    return day != plan_comparison.SATURDAY and day != plan_comparison.SUNDAY
+  def is_weekday(dateTime):
+    return dateTime.weekday() != calendar.SATURDAY and dateTime.weekday() != calendar.SUNDAY
 
-  def calc_price_per_kWH(plan, **kwargs):
+  def calc_price_per_kWH(plan, dateTime):
     price = 0
     if plan == 'timeOfDay3p7p':
       # https://solutions.dteenergy.com/dte/en/Products/Time-of-Day-3-p-m---7-p-m-/p/TOD-3-7
       # Time of Day 3 p.m. – 7 p.m. Standard Base Rate (D1.11)
       # On-peak hours: Monday-Friday 3 p.m. to 7 p.m.
-      if plan_comparison.is_weekday(kwargs['day']) and kwargs['hour'] >= 15 and kwargs['hour'] < 19:
-        if kwargs['month'] >= 6 and kwargs['month'] <= 9: #June through September
+      if plan_comparison.is_weekday(dateTime) and dateTime.hour >= 15 and dateTime.hour < 19:
+        if dateTime.month >= 6 and dateTime.month <= 9: #June through September
           price = .07941 + .06160
         else:
           price = .05560 + .04313
@@ -127,13 +124,13 @@ class plan_comparison:
       # https://solutions.dteenergy.com/dte/en/Products/Time-of-Day-11-a-m---7-p-m-/p/TOD-11-7
       # Time of Day 11 a.m. - 7 p.m. Rate (D1.2)
       # On-peak hours: Monday-Friday 11 a.m. to 7 p.m.
-      if plan_comparison.is_weekday(kwargs['day']) and kwargs['hour'] >= 11 and kwargs['hour'] < 19:
-        if kwargs['month'] >= 6 and kwargs['month'] <= 10: #June through October
+      if plan_comparison.is_weekday(dateTime) and dateTime.hour >= 11 and dateTime.hour < 19:
+        if dateTime.month >= 6 and dateTime.month <= 10: #June through October
           price = .11033
         else:
           price = .08682
       else: #off-peak
-        if kwargs['month'] >= 6 and kwargs['month'] <= 10: #June through October
+        if dateTime.month >= 6 and dateTime.month <= 10: #June through October
           price = .00991
         else:
           price = .00792
@@ -150,10 +147,10 @@ class plan_comparison:
       # service, other than Rider 18 (if available)
       price = 0.01184 #off-peak
     
-      if plan_comparison.is_weekday(kwargs['day']):
-        if kwargs['hour'] >= 15 and kwargs['hour'] < 19:
+      if plan_comparison.is_weekday(dateTime) and not holidays.is_holiday(dateTime):
+        if dateTime.hour >= 15 and dateTime.hour < 19:
           price = .12658 #peak between 3 and 7
-        elif (kwargs['hour'] >= 7 and kwargs['hour'] < 15) or (kwargs['hour'] >= 19 and kwargs['hour'] < 23):
+        elif (dateTime.hour >= 7 and dateTime.hour < 15) or (dateTime.hour >= 19 and dateTime.hour < 23):
           price = .05486 #mid-peak
 
       price += .03403 # non-capacity
@@ -180,12 +177,105 @@ class plan_comparison:
     price += nonCapacity + distribution
     cost = 0
     for hour in additionalInfo.criticalPeakHoursUsage.keys():
-      avgKwh = sum(additionalInfo.criticalPeakHoursUsage[hour]) / len(additionalInfo.criticalPeakHoursUsage[hour])
+      dataPoints = len(additionalInfo.criticalPeakHoursUsage[hour])
+      avgKwh = sum(additionalInfo.criticalPeakHoursUsage[hour]) / dataPoints if dataPoints else 0
       # Regular dynamic pricing is already calculated for all dates, so this estimate should be the critical rate minus the regular dynamic rate
-      additionalPrice = price - plan_comparison.calc_price_per_kWH('dynamic', hour=hour, day=plan_comparison.MONDAY)
+      # We need a weekday passed into calc_price_per_kWH, so create a datetime for next Monday
+      today = datetime.datetime.today()
+      nextMonday = today + datetime.timedelta(days=-today.weekday(), weeks=1)
+      dateTime = nextMonday.replace(hour=hour)
+      additionalPrice = price - plan_comparison.calc_price_per_kWH('dynamic', dateTime)
       cost += avgKwh * additionalPrice
     cost = cost * 14
     return cost
+
+class holidays:
+  # Function calculates and prints
+  # easter date for given year 
+  # https://www.geeksforgeeks.org/how-to-calculate-the-easter-date-for-a-given-year-using-gauss-algorithm/
+  def easter(year):
+    # All calculations done
+    # on the basis of
+    # Gauss Easter Algorithm
+    A = year % 19
+    B = year % 4
+    C = year % 7
+    
+    P = math.floor(year / 100)
+    Q = math.floor((13 + 8 * P) / 25)
+    M = (15 - Q + P - P // 4) % 30
+    N = (4 + P - P // 4) % 7
+    D = (19 * A + M) % 30
+    E = (2 * B + 4 * C + 6 * D + N) % 7
+    days = (22 + D + E)
+  
+    # A corner case,
+    # when D is 29
+    if ((D == 29) and (E == 6)):
+      return datetime.datetime(year, 4, 19)
+    
+    # Another corner case,
+    # when D is 28
+    elif ((D == 28) and (E == 6)):
+      return datetime.datetime(year, 4, 18)
+    
+    else:
+      # If days > 31, move to April
+      # April = 4th Month
+      if (days > 31):
+        return datetime.datetime(year, 4, days-31)
+        
+      else:
+        # Otherwise, stay on March
+        # March = 3rd Month
+        return datetime.datetime(year, 3, days)
+      
+  def good_friday(year):
+    return holidays.easter(year) - datetime.timedelta(days=2)
+  
+  def memorial_day(year):
+    # Last Monday in May
+    month = calendar.monthcalendar(year, 5)
+    mondays = [week[calendar.MONDAY] for week in month if week[calendar.MONDAY]>0]
+    return datetime.datetime(year, 5, mondays[-1])
+  
+  def labor_day(year):
+    # First Monday in September
+    month = calendar.monthcalendar(year, 9)
+    mondays = [week[calendar.MONDAY] for week in month if week[calendar.MONDAY]>0]
+    return datetime.datetime(year, 9, mondays[0])
+  
+  def thanksgiving(year):
+    # Fourth Thursday in November
+    month = calendar.monthcalendar(year, 11)
+    thursdays = [week[calendar.THURSDAY] for week in month if week[calendar.THURSDAY]>0]
+    return datetime.datetime(year, 11, thursdays[3])
+  
+  def is_holiday(dateTime):
+    # https://solutions.dteenergy.com/dte/en/c/Dynamic-Peak-Pricing/p/DPP
+    # *Designated Holidays: New Year's Day, Good Friday, Memorial Day, Independence Day, Labor Day, Thanksgiving and Christmas.
+    if dateTime.month == 1 and dateTime.day == 1:
+      # New Year's Day
+      return True
+    elif dateTime.date() == holidays.good_friday(dateTime.year).date():
+      # Good Friday
+      return True
+    elif dateTime.date() == holidays.memorial_day(dateTime.year).date() :
+      # Memorial Day
+      return True
+    elif dateTime.month == 7 and dateTime.day == 4:
+      # Independence Day
+      return True
+    elif dateTime.date() == holidays.labor_day(dateTime.year).date():
+      # Labor Day
+      return True
+    elif dateTime.date() == holidays.thanksgiving(dateTime.year).date():
+      # Thanksgiving
+      return True
+    elif dateTime.month == 12 and dateTime.day == 25:
+      # Christmas
+      return True
+    return False
 
 if __name__ == "__main__":
 
