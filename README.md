@@ -20,7 +20,7 @@ This script is useful for using historical usage data to compare DTE Electric Ra
 1. Autodownload data from DTE
 
 ### Data Source
-[DTE Electric Rate Card](https://newlook.dteenergy.com/wps/wcm/connect/23195474-a4d1-4d38-aa30-a4426fd3336b/WholeHouseRateOptions.pdf?MOD=AJPERES) w/ ref 22599800/PDF/12-22/RES		
+[DTE Electric Rate Card](https://newlook.dteenergy.com/wps/wcm/connect/23195474-a4d1-4d38-aa30-a4426fd3336b/WholeHouseRateOptions.pdf?MOD=AJPERES) w/ ref 23639801/PDF/2-23/RES		
 
 ### Other Notes
 My bill has some volumetric charges not mentioned on the rate card:
