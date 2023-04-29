@@ -16,8 +16,8 @@ This script is useful for using historical usage data to compare DTE Electric Ra
 ### Potential Future Features
 1. Better testing (e.g. ensure days of week and months are correctly interpreted, may require refactoring into better units)
 1. End-to-end verification
-1. Peak pricing simulation
-1. Autodownload data from DTE
+1. ~~Peak pricing simulation~~
+1. Auto-download data from DTE
 
 ### Data Source
 [DTE Electric Rate Card](https://newlook.dteenergy.com/wps/wcm/connect/23195474-a4d1-4d38-aa30-a4426fd3336b/WholeHouseRateOptions.pdf?MOD=AJPERES) w/ ref 23639801/PDF/2-23/RES		
